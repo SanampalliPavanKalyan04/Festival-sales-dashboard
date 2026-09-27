@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Festival Pulse — India E-commerce Sales Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.32.0/plotly.min.js"></script>
+<style>
+  :root{
+    --bg:#10121b; --panel:#191c29; --panel-2:#1f2333; --line:#2a2f45;
+    --text:#eef0f6; --muted:#9297b0; --saffron:#f2a93b; --teal:#2fbf9f; --rose:#e0577b;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+  h1,h2,h3,.num{font-family:'Space Grotesk',system-ui,sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:2.2rem 1.4rem 4rem;}
+  header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;
+    border-bottom:1px solid var(--line);padding-bottom:1.4rem;margin-bottom:2rem;}
+  header h1{font-size:1.6rem;font-weight:700;margin:0 0 .3rem;}
+  header p{margin:0;color:var(--muted);font-size:.92rem;max-width:46ch;}
+  .badge{font-size:.78rem;color:var(--saffron);background:rgba(242,169,59,.12);border:1px solid rgba(242,169,59,.35);
+    padding:.3rem .7rem;border-radius:5px;white-space:nowrap;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;margin-bottom:2rem;}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1.1rem 1.2rem;}
+  .kpi .label{color:var(--muted);font-size:.78rem;margin-bottom:.4rem;}
+  .kpi .num{font-size:1.55rem;font-weight:600;}
+  .kpi .sub{font-size:.78rem;color:var(--teal);margin-top:.3rem;}
+  .tabs{display:flex;gap:.4rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+  .tab{background:transparent;border:1px solid var(--line);color:var(--muted);padding:.5rem 1rem;
+    border-radius:7px;font-family:'Inter';font-size:.86rem;cursor:pointer;}
+  .tab.active{background:var(--panel-2);color:var(--text);border-color:var(--saffron);}
+  .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:1.2rem;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1.2rem;margin-bottom:1.2rem;}
+  .panel h3{margin:0 0 .8rem;font-size:1rem;font-weight:600;}
+  .view{display:none;} .view.active{display:block;}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th,td{text-align:left;padding:.5rem .4rem;border-bottom:1px solid var(--line);}
+  th{color:var(--muted);font-weight:500;font-size:.76rem;text-transform:none;}
+  .scrollx{overflow-x:auto;}
+  footer{color:var(--muted);font-size:.78rem;margin-top:2rem;border-top:1px solid var(--line);padding-top:1.2rem;}
+  @media (max-width:820px){.grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Festival Pulse</h1>
+      <p>How Diwali, Big Billion Days and seven other sale seasons reshape daily demand across Amazon &amp; Flipkart — Jan 2023–Dec 2024, synthetic dataset.</p>
+    </div>
+    <span class="badge">FY24 revenue up 14.3% YoY</span>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="overview">Overview</button>
+    <button class="tab" data-view="festival">Festival vs Normal</button>
+    <button class="tab" data-view="category">Categories</button>
+    <button class="tab" data-view="platform">Platforms</button>
+  </div>
+
+  <div id="overview" class="view active">
+    <div class="panel"><h3>Monthly revenue (₹ crore)</h3><div id="chartMonthly"></div></div>
+    <div class="grid2">
+      <div class="panel"><h3>Revenue by day of week</h3><div id="chartDow"></div></div>
+      <div class="panel"><h3>Top festival events by revenue</h3><div id="chartFestBar"></div></div>
+    </div>
+  </div>
+
+  <div id="festival" class="view">
+    <div class="grid2">
+      <div class="panel"><h3>Avg revenue per day: Festival vs Normal</h3><div id="chartFestVsNormal"></div></div>
+      <div class="panel">
+        <h3>Festival day economics</h3>
+        <div class="scrollx"><table id="tblFestNormal"></table></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Every festival, ranked</h3>
+      <div class="scrollx"><table id="tblFestivals"></table></div>
+    </div>
+  </div>
+
+  <div id="category" class="view">
+    <div class="grid2">
+      <div class="panel"><h3>Revenue by category</h3><div id="chartCategory"></div></div>
+      <div class="panel"><h3>Share of category revenue from festival days</h3><div id="chartCatFestShare"></div></div>
+    </div>
+  </div>
+
+  <div id="platform" class="view">
+    <div class="panel"><h3>Amazon vs Flipkart</h3><div id="chartPlatform"></div></div>
+  </div>
+
+  <footer>Synthetic dataset generated for demonstration — not real Amazon/Flipkart figures. Built with pandas + Plotly.</footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = SALES_DATA;
+const paper = {paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+  font:{color:'#eef0f6', family:'Inter'}, margin:{t:10,l:50,r:20,b:60}};
+const grid = {gridcolor:'#2a2f45', zerolinecolor:'#2a2f45'};
+const cfg = {displayModeBar:false, responsive:true};
+const fmtCr = n => (n/1e7).toFixed(1);
+const fmtINR = n => '₹' + Number(n).toLocaleString('en-IN');
+
+// ---- KPIs ----
+const kpis = [
+  {label:'Total revenue', num: '₹' + fmtCr(D.headline.total_revenue) + ' Cr', sub:'Jan 2023 – Dec 2024'},
+  {label:'Total orders', num: D.headline.total_orders.toLocaleString('en-IN'), sub: D.headline.total_units.toLocaleString('en-IN') + ' units sold'},
+  {label:'Avg order value', num: fmtINR(D.headline.aov), sub:'across all categories'},
+  {label:'Festival-day revenue share', num: D.headline.festival_revenue_share_pct + '%', sub:'from ~15% of days'},
+  {label:'YoY growth (2023→2024)', num: D.headline.yoy_growth_pct + '%', sub:'total revenue'},
+];
+document.getElementById('kpis').innerHTML = kpis.map(k =>
+  `<div class="kpi"><div class="label">${k.label}</div><div class="num">${k.num}</div><div class="sub">${k.sub}</div></div>`
+).join('');
+
+// ---- Tabs ----
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.view).classList.add('active');
+    window.dispatchEvent(new Event('resize'));
+  });
+});
+
+// ---- Monthly trend ----
+Plotly.newPlot('chartMonthly', [{
+  x: D.monthly.map(m=>m.month), y: D.monthly.map(m=>m.revenue/1e7),
+  type:'scatter', mode:'lines+markers', line:{color:'#f2a93b', width:2.5}, marker:{size:5}
+}], {...paper, xaxis:{...grid}, yaxis:{...grid, title:'₹ Crore'}, height:320}, cfg);
+
+// ---- Day of week ----
+Plotly.newPlot('chartDow', [{
+  x: D.by_weekday.map(w=>w.weekday.slice(0,3)), y: D.by_weekday.map(w=>w.revenue/1e7),
+  type:'bar', marker:{color:'#2fbf9f'}
+}], {...paper, xaxis:{...grid}, yaxis:{...grid, title:'₹ Crore'}, height:280}, cfg);
+
+// ---- Festival bar (overview) ----
+const festSorted = [...D.by_festival].sort((a,b)=>b.revenue-a.revenue);
+Plotly.newPlot('chartFestBar', [{
+  y: festSorted.map(f=>f.name), x: festSorted.map(f=>f.revenue/1e7),
+  type:'bar', orientation:'h', marker:{color:'#e0577b'}
+}], {...paper, xaxis:{...grid, title:'₹ Crore'}, yaxis:{...grid, automargin:true}, height:280, margin:{t:10,l:210,r:20,b:50}}, cfg);
+
+// ---- Festival vs Normal ----
+const fn = D.festival_vs_normal;
+Plotly.newPlot('chartFestVsNormal', [{
+  x:['Normal','Festival'], y:[fn.Normal.revenue_per_day/1e7, fn.Festival.revenue_per_day/1e7],
+  type:'bar', marker:{color:['#9297b0','#f2a93b']}
+}], {...paper, xaxis:{...grid}, yaxis:{...grid, title:'₹ Crore / day'}, height:300}, cfg);
+
+document.getElementById('tblFestNormal').innerHTML = `
+  <tr><th></th><th>Days</th><th>Revenue</th><th>Avg discount</th><th>Return rate</th></tr>
+  <tr><td>Normal</td><td>${fn.Normal.days}</td><td>${fmtINR(fn.Normal.revenue)}</td><td>${fn.Normal.avg_discount}%</td><td>${fn.Normal.return_rate_pct}%</td></tr>
+  <tr><td>Festival</td><td>${fn.Festival.days}</td><td>${fmtINR(fn.Festival.revenue)}</td><td>${fn.Festival.avg_discount}%</td><td>${fn.Festival.return_rate_pct}%</td></tr>
+`;
+
+document.getElementById('tblFestivals').innerHTML =
+  '<tr><th>Festival</th><th>Revenue</th><th>Orders</th><th>Avg discount</th></tr>' +
+  festSorted.map(f=>`<tr><td>${f.name}</td><td>${fmtINR(f.revenue)}</td><td>${f.orders.toLocaleString('en-IN')}</td><td>${f.avg_discount}%</td></tr>`).join('');
+
+// ---- Category ----
+const catSorted = [...D.by_category].sort((a,b)=>a.revenue-b.revenue);
+Plotly.newPlot('chartCategory', [{
+  y: catSorted.map(c=>c.category), x: catSorted.map(c=>c.revenue/1e7),
+  type:'bar', orientation:'h', marker:{color:'#2fbf9f'}
+}], {...paper, xaxis:{...grid, title:'₹ Crore'}, yaxis:{...grid, automargin:true}, height:340, margin:{t:10,l:170,r:20,b:50}}, cfg);
+
+Plotly.newPlot('chartCatFestShare', [{
+  y: D.by_category.map(c=>c.category), x: D.by_category.map(c=>c.festival_share_pct),
+  type:'bar', orientation:'h', marker:{color:'#f2a93b'}
+}], {...paper, xaxis:{...grid, title:'% of category revenue'}, yaxis:{...grid, automargin:true}, height:340, margin:{t:10,l:170,r:20,b:50}}, cfg);
+
+// ---- Platform ----
+Plotly.newPlot('chartPlatform', [
+  {x: D.by_platform.map(p=>p.platform), y: D.by_platform.map(p=>p.revenue/1e7), type:'bar', name:'Revenue (₹ Cr)', marker:{color:'#f2a93b'}, yaxis:'y'},
+], {...paper, xaxis:{...grid}, yaxis:{...grid, title:'₹ Crore'}, height:340}, cfg);
+</script>
+</body>
+</html>
